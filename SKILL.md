@@ -72,7 +72,7 @@ cd <skill_dir> && make -j$(nproc)
 **7. Search web page content:**
 
 ```bash
-<skill_dir>/build/searchup --web -i "searchup" https://github.com/oemoem12/searchup
+<skill_dir>/build/searchup --web -i "example" https://example.com
 ```
 
 **8. Search web page with JSON output:**
