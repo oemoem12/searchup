@@ -9,7 +9,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-add_executable(searchup src/searchup.cpp)
+add_executable(searchup scripts/searchup.cpp)
 
 target_compile_options(searchup PRIVATE
     $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -O2>

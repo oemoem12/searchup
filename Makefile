@@ -6,7 +6,7 @@ LDFLAGS ?=
 
 BUILD_DIR ?= build
 TARGET = $(BUILD_DIR)/searchup
-SRC = src/searchup.cpp
+SRC = scripts/searchup.cpp
 
 all: $(TARGET)
 

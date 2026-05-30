@@ -5,27 +5,47 @@ description: "High-performance C++ search utility for files and text. Invoke whe
 
 # SearchUp — AI-Friendly C++ Search Engine
 
-A high-performance search utility written in C++17, designed specifically for AI agents to search files, directories, and text content with maximum speed and flexibility.
+A high-performance search utility written in **C++17**, designed specifically for AI agents to search files, directories, and text content with maximum speed and flexibility.
+
+## Directory Structure
+
+```
+searchup-skill/
+├── SKILL.md              # This file — skill definition
+├── scripts/
+│   ├── searchup.cpp      # C++17 core search engine (~515 lines)
+│   └── searchup.js       # Node.js CLI wrapper (npm bin entry)
+├── Makefile              # Build system (make / make install)
+├── CMakeLists.txt        # CMake build support
+├── package.json          # npm package config
+├── LICENSE               # MIT License
+└── README.md             # GitHub project readme
+```
 
 ## Quick Start
 
-Before first use, build the binary:
+### Build from source
 
 ```bash
 cd .trae/skills/searchup-skill
 make -j$(nproc)
 ```
 
-Or use CMake:
+Or with CMake:
 
 ```bash
-cd .trae/skills/searchup-skill
 mkdir -p build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
 ```
 
-The compiled binary will be at `.trae/skills/searchup-skill/build/searchup`.
+The compiled binary will be at `build/searchup`.
+
+### Install via npm
+
+```bash
+npm install -g searchup
+```
 
 ## Usage
 
@@ -73,25 +93,12 @@ searchup [OPTIONS] <pattern> [path...]
 ### Examples
 
 ```bash
-# Full-text search for "main" in all .cpp files, case-insensitive
 searchup -i -t -e cpp "main" src/
-
-# Regex search with 3 lines of context
 searchup -r -C 3 "class\s+\w+" .
-
-# Find all files named "config*" 
 searchup -f "config" /etc
-
-# JSON output for AI consumption (default search mode)
 searchup --json "TODO" src/
-
-# Count matches per file
 searchup -c -t "FIXME" .
-
-# List only files containing the pattern
 searchup -l -t "include" src/
-
-# Search with depth limit and size filter
 searchup -t --depth 3 --max-size 1048576 "function" .
 ```
 
@@ -120,6 +127,7 @@ When using `--json`, the output is structured as:
 ## AI Integration
 
 This skill is designed to be invoked by AI agents when:
+
 - Built-in grep/find performance is insufficient for large codebases
 - Structured (JSON) output is needed for programmatic processing
 - Complex search patterns with multiple filters are required

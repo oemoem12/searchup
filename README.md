@@ -1,46 +1,76 @@
-# SearchUp — AI-Friendly C++ Search Engine
+<p align="center">
+  <img src="https://img.shields.io/npm/v/searchup?style=flat-square" alt="npm version"/>
+  <img src="https://img.shields.io/npm/l/searchup?style=flat-square" alt="license"/>
+  <img src="https://img.shields.io/npm/types/searchup?style=flat-square" alt="types"/>
+</p>
 
-A high-performance, lightweight search utility written in **C++17** — designed for both humans and AI agents. No external dependencies.
+<h1 align="center">SearchUp</h1>
 
-```bash
-searchup [OPTIONS] <pattern> [path...]
-```
+<p align="center">
+  A high-performance, lightweight search utility written in <strong>C++17</strong><br/>
+  Designed for both humans and AI agents • Zero external dependencies
+</p>
+
+---
 
 ## Features
 
-| Mode | Flag | Description |
-|------|------|-------------|
+| Feature | Flag | Description |
+|---------|------|-------------|
 | Full-text search | `-t` | Search file contents |
 | Filename search | `-f` | Search file/directory names |
 | Regex search | `-r` | ECMAScript regular expressions |
 | JSON output | `--json` | Structured output for AI parsing |
-| Context | `-A / -B / -C` | Lines before/after match |
-| Streaming | — | No buffering, instant results |
-
-## Quick Start
-
-```bash
-# Build
-make -j$(nproc)
-
-# Search
-./build/searchup -t "function" src/
-./build/searchup -r -C 2 "class\s+\w+" .
-./build/searchup --json "TODO" .
-```
+| Context lines | `-A / -B / -C` | Lines before/after match |
+| Extension filter | `-e` | Filter by file extension |
+| Depth limit | `--depth` | Control recursion depth |
 
 ## Install
 
 ```bash
-make install
-# → /usr/local/bin/searchup
+# npm (recommended)
+npm install -g searchup
+
+# Build from source
+git clone https://github.com/oemoem12/searchup.git
+cd searchup
+make -j$(nproc)
+sudo make install
 ```
 
-## Build Requirements
+## Usage
 
-- C++17 compiler (GCC 8+, Clang 7+)
-- POSIX OS (Linux, macOS, WSL)
-- Zero external libraries
+```bash
+# Basic full-text search
+searchup -t "function" src/
+
+# Regex with context
+searchup -r -C 2 "class\s+\w+" .
+
+# JSON output for AI consumption
+searchup --json "TODO" .
+
+# Filename search
+searchup -f "config" /etc
+
+# Count matches per file
+searchup -c -t "FIXME" .
+```
+
+## Project Structure
+
+```
+searchup-skill/
+├── SKILL.md              # Skill definition (Trae IDE)
+├── scripts/
+│   ├── searchup.cpp      # C++17 core engine
+│   └── searchup.js       # Node.js wrapper (npm bin)
+├── Makefile              # GNU Make build
+├── CMakeLists.txt        # CMake build support
+├── package.json          # npm package
+├── LICENSE               # MIT License
+└── README.md             # You are here
+```
 
 ## AI-Friendly JSON Output
 
@@ -61,6 +91,12 @@ make install
 }
 ```
 
+## Requirements
+
+- **C++17** compiler (GCC 8+, Clang 7+)
+- **Node.js >= 14** (for npm install)
+- **POSIX OS** (Linux, macOS, WSL)
+
 ## License
 
-MIT
+[MIT](LICENSE) © catodm

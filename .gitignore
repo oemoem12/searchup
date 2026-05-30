@@ -3,6 +3,11 @@ build/
 *.o
 *.obj
 
+# Node / npm
+node_modules/
+npm-debug.log*
+package-lock.json
+
 # IDE
 .vscode/
 .idea/
