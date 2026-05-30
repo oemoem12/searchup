@@ -4,7 +4,7 @@
   <a href="https://github.com/oemoem12/searchup/actions"><img src="https://img.shields.io/github/actions/workflow/status/oemoem12/searchup?style=flat-square" alt="CI"/></a>
 </p>
 
-<h1>SearchUp Skill</h1>
+<h1 align="center">SearchUp Skill</h1>
 <h2 align="center">For Web Serch</h2>
 <p align="center">
   A high-performance, lightweight search utility written in <strong>C++17</strong><br/>
