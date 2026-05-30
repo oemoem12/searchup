@@ -13,7 +13,7 @@
 namespace fs = std::filesystem;
 
 struct SearchOptions {
-    enum class Mode { Text, Filename, Regex };
+    enum class Mode { Text, Filename, Regex, Web };
     enum class Output { Normal, Json, FilesOnly, Count };
 
     Mode mode = Mode::Text;
@@ -110,7 +110,7 @@ static bool matches_filename(const std::string& filename, const SearchOptions& o
 }
 
 static bool matches_content(const std::string& line, const SearchOptions& opts) {
-    if (opts.mode == SearchOptions::Mode::Regex && opts.has_regex) {
+    if ((opts.mode == SearchOptions::Mode::Regex || opts.mode == SearchOptions::Mode::Web) && opts.has_regex) {
         return std::regex_search(line, opts.compiled_regex);
     }
     return str_contains(line, opts.pattern, opts.case_insensitive);
@@ -128,6 +128,45 @@ static bool has_extension(const std::string& filename,
     return false;
 }
 
+static std::string strip_html_tags(const std::string& input) {
+    static const std::regex tag_re("<[^>]*>");
+    static const std::regex entity_re("&(#?\\w+);");
+    static const std::regex unicode_re("\\\\u[0-9a-fA-F]{4}");
+    static const std::regex script_re("<script[^>]*>[\\s\\S]*?</script>");
+    static const std::regex style_re("<style[^>]*>[\\s\\S]*?</style>");
+    std::string result = std::regex_replace(input, script_re, "");
+    result = std::regex_replace(result, style_re, "");
+    result = std::regex_replace(result, tag_re, "");
+    result = std::regex_replace(result, unicode_re, "");
+    result = std::regex_replace(result, entity_re, "");
+    static const std::regex multi_space_re("  +");
+    result = std::regex_replace(result, multi_space_re, " ");
+    return result;
+}
+
+static std::string fetch_url(const std::string& url) {
+    std::string cmd = "curl -sL --max-time 30 -- ";
+    std::string escaped_url;
+    escaped_url.reserve(url.size());
+    for (char c : url) {
+        if (c == '\'') {
+            escaped_url += "'\\''";
+        } else {
+            escaped_url += c;
+        }
+    }
+    cmd += "'" + escaped_url + "'";
+    FILE* pipe = popen(cmd.c_str(), "r");
+    if (!pipe) return "";
+    std::string result;
+    char buf[4096];
+    while (fgets(buf, sizeof(buf), pipe)) {
+        result += buf;
+    }
+    pclose(pipe);
+    return result;
+}
+
 static std::vector<CollectedLine> read_file_with_context(
     const std::string& path, const SearchOptions& opts) {
     std::vector<CollectedLine> all_lines;
@@ -136,6 +175,29 @@ static std::vector<CollectedLine> read_file_with_context(
     std::string line_buf;
     uintmax_t line_num = 0;
     while (std::getline(file, line_buf)) {
+        ++line_num;
+        all_lines.push_back(
+            {line_num, line_buf, matches_content(line_buf, opts)});
+    }
+    return all_lines;
+}
+
+static std::vector<CollectedLine> read_url_with_context(
+    const std::string& url, const SearchOptions& opts) {
+    std::vector<CollectedLine> all_lines;
+    std::string content = fetch_url(url);
+    if (content.empty()) return all_lines;
+    content = strip_html_tags(content);
+    std::istringstream stream(content);
+    std::string line_buf;
+    uintmax_t line_num = 0;
+    while (std::getline(stream, line_buf)) {
+        size_t start = line_buf.find_first_not_of(" \t\r\n");
+        if (start == std::string::npos) continue;
+        line_buf = line_buf.substr(start);
+        size_t end = line_buf.find_last_not_of(" \t\r\n");
+        if (end != std::string::npos) line_buf = line_buf.substr(0, end + 1);
+        if (line_buf.size() < 3) continue;
         ++line_num;
         all_lines.push_back(
             {line_num, line_buf, matches_content(line_buf, opts)});
@@ -331,7 +393,8 @@ static void print_usage(const char* prog) {
     std::cerr << "Search Modes:\n";
     std::cerr << "  -t          Full-text search (default)\n";
     std::cerr << "  -f          Filename search\n";
-    std::cerr << "  -r          Regex search\n\n";
+    std::cerr << "  -r          Regex search\n";
+    std::cerr << "  --web       Web search (paths are URLs, fetches via curl)\n\n";
     std::cerr << "Output Modes:\n";
     std::cerr << "  --json      JSON output for AI parsing\n";
     std::cerr << "  -l          List filenames only\n";
@@ -353,6 +416,7 @@ static void print_usage(const char* prog) {
     std::cerr << "  " << prog << " -i -t -e cpp \"main\" src/\n";
     std::cerr << "  " << prog << " -r -C 3 \"class\\\\s+\\\\w+\" .\n";
     std::cerr << "  " << prog << " --json \"TODO\" src/\n";
+    std::cerr << "  " << prog << " --web -i \"search term\" https://example.com\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -372,6 +436,8 @@ int main(int argc, char* argv[]) {
             opts.mode = SearchOptions::Mode::Filename;
         } else if (arg == "-r") {
             opts.mode = SearchOptions::Mode::Regex;
+        } else if (arg == "--web") {
+            opts.mode = SearchOptions::Mode::Web;
         } else if (arg == "--json") {
             opts.output = SearchOptions::Output::Json;
         } else if (arg == "-l") {
@@ -421,10 +487,14 @@ int main(int argc, char* argv[]) {
         opts.paths.push_back(positional[i]);
     }
     if (opts.paths.empty()) {
+        if (opts.mode == SearchOptions::Mode::Web) {
+            std::cerr << "Error: --web mode requires at least one URL\n";
+            return 1;
+        }
         opts.paths.push_back(".");
     }
 
-    if (opts.mode == SearchOptions::Mode::Regex) {
+    if (opts.mode == SearchOptions::Mode::Regex || opts.mode == SearchOptions::Mode::Web) {
         try {
             auto flags = std::regex::ECMAScript;
             if (opts.case_insensitive) flags |= std::regex::icase;
@@ -439,66 +509,96 @@ int main(int argc, char* argv[]) {
     SearchReport report;
     report.pattern = opts.pattern;
     switch (opts.mode) {
-        case SearchOptions::Mode::Text:   report.mode = "text";   break;
+        case SearchOptions::Mode::Text:     report.mode = "text";     break;
         case SearchOptions::Mode::Filename: report.mode = "filename"; break;
-        case SearchOptions::Mode::Regex:  report.mode = "regex";  break;
+        case SearchOptions::Mode::Regex:    report.mode = "regex";    break;
+        case SearchOptions::Mode::Web:      report.mode = "web";      break;
     }
 
-    for (const auto& p : opts.paths) {
-        fs::path path(p);
-        std::error_code ec;
-        if (!fs::exists(path, ec)) {
-            std::cerr << "Path not found: " << p << "\n";
-            continue;
-        }
+    if (opts.mode == SearchOptions::Mode::Web) {
+        for (const auto& url : opts.paths) {
+            auto all_lines = read_url_with_context(url, opts);
+            bool has_match = false;
+            for (const auto& l : all_lines) {
+                if (l.is_match) { has_match = true; break; }
+            }
+            if (!has_match) continue;
 
-        if (fs::is_directory(path, ec)) {
-            search_directory(path, report, opts, 0);
-        } else if (fs::is_regular_file(path, ec)) {
-            auto path_str = path.string();
-            auto filename = path.filename().string();
+            report.files_searched++;
 
-            if (opts.mode == SearchOptions::Mode::Filename) {
-                if (matches_filename(filename, opts)) {
-                    report.files_searched++;
-                    report.total_matches++;
-                    FileResult fr;
-                    fr.file = path_str;
-                    fr.matches.push_back({path_str, 0, filename});
-                    report.results.push_back(fr);
-                }
+            std::vector<MatchResult> matches;
+            if (opts.context_before > 0 || opts.context_after > 0) {
+                matches = extract_matches_with_context(all_lines, opts);
             } else {
-                if (!has_extension(filename, opts.extensions)) continue;
-                if (!opts.include_binary && is_binary_file(path_str)) {
-                    std::cerr << "Skipping binary file: " << path_str << "\n";
-                    continue;
-                }
+                matches = extract_matches_only(all_lines);
+            }
 
-                auto all_lines = read_file_with_context(path_str, opts);
-                bool has_match = false;
-                for (const auto& l : all_lines) {
-                    if (l.is_match) { has_match = true; break; }
-                }
-                if (!has_match) continue;
+            if (matches.empty()) continue;
 
-                report.files_searched++;
-                std::vector<MatchResult> matches;
-                if (opts.context_before > 0 || opts.context_after > 0) {
-                    matches = extract_matches_with_context(all_lines, opts);
+            FileResult fr;
+            fr.file = url;
+            for (auto& m : matches) m.file = url;
+            fr.matches = matches;
+            report.total_matches += matches.size();
+            report.results.push_back(fr);
+        }
+    } else {
+        for (const auto& p : opts.paths) {
+            fs::path path(p);
+            std::error_code ec;
+            if (!fs::exists(path, ec)) {
+                std::cerr << "Path not found: " << p << "\n";
+                continue;
+            }
+
+            if (fs::is_directory(path, ec)) {
+                search_directory(path, report, opts, 0);
+            } else if (fs::is_regular_file(path, ec)) {
+                auto path_str = path.string();
+                auto filename = path.filename().string();
+
+                if (opts.mode == SearchOptions::Mode::Filename) {
+                    if (matches_filename(filename, opts)) {
+                        report.files_searched++;
+                        report.total_matches++;
+                        FileResult fr;
+                        fr.file = path_str;
+                        fr.matches.push_back({path_str, 0, filename});
+                        report.results.push_back(fr);
+                    }
                 } else {
-                    matches = extract_matches_only(all_lines);
-                }
+                    if (!has_extension(filename, opts.extensions)) continue;
+                    if (!opts.include_binary && is_binary_file(path_str)) {
+                        std::cerr << "Skipping binary file: " << path_str << "\n";
+                        continue;
+                    }
 
-                if (!matches.empty()) {
-                    FileResult fr;
-                    fr.file = path_str;
-                    for (auto& m : matches) m.file = path_str;
-                    fr.matches = matches;
-                    report.total_matches +=
-                        (opts.context_before > 0 || opts.context_after > 0)
-                            ? matches.size()
-                            : matches.size();
-                    report.results.push_back(fr);
+                    auto all_lines = read_file_with_context(path_str, opts);
+                    bool has_match = false;
+                    for (const auto& l : all_lines) {
+                        if (l.is_match) { has_match = true; break; }
+                    }
+                    if (!has_match) continue;
+
+                    report.files_searched++;
+                    std::vector<MatchResult> matches;
+                    if (opts.context_before > 0 || opts.context_after > 0) {
+                        matches = extract_matches_with_context(all_lines, opts);
+                    } else {
+                        matches = extract_matches_only(all_lines);
+                    }
+
+                    if (!matches.empty()) {
+                        FileResult fr;
+                        fr.file = path_str;
+                        for (auto& m : matches) m.file = path_str;
+                        fr.matches = matches;
+                        report.total_matches +=
+                            (opts.context_before > 0 || opts.context_after > 0)
+                                ? matches.size()
+                                : matches.size();
+                        report.results.push_back(fr);
+                    }
                 }
             }
         }

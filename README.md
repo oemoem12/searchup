@@ -20,6 +20,7 @@
 | Full-text search | `-t` | Search file contents |
 | Filename search | `-f` | Search file/directory names |
 | Regex search | `-r` | ECMAScript regular expressions |
+| Web search | `--web` | Fetch & search web pages (HTML auto-stripped) |
 | JSON output | `--json` | Structured output for AI parsing |
 | Context lines | `-A / -B / -C` | Lines before/after match |
 | Extension filter | `-e` | Filter by file extension |
@@ -55,6 +56,12 @@ searchup -f "config" /etc
 
 # Count matches per file
 searchup -c -t "FIXME" .
+
+# Search web page content
+searchup --web -i "searchup" https://github.com/oemoem12/searchup
+
+# Web search with JSON output
+searchup --web --json "MIT" https://example.com
 ```
 
 ## Project Structure
@@ -96,6 +103,7 @@ searchup-skill/
 - **C++17** compiler (GCC 8+, Clang 7+)
 - **Node.js >= 14** (for npm install)
 - **POSIX OS** (Linux, macOS, WSL)
+- **curl** (required for `--web` mode)
 
 ## License
 
