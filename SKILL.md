@@ -9,22 +9,26 @@ A high-performance search utility written in **C++17**, designed specifically fo
 
 ## AI Agent Quick Reference
 
-The pre-compiled binary is at:
+The binary is located at `build/searchup` relative to this skill's directory.
+
+**Step 1: Resolve the binary path.** This SKILL.md file is at `<skill_dir>/SKILL.md`. The binary is at:
 
 ```
-/home/cat/Documents/trae_projects/trae/.trae/skills/searchup-skill/build/searchup
+<skill_dir>/build/searchup
 ```
 
-If the binary does not exist, build it first:
+Where `<skill_dir>` is the directory containing this SKILL.md file (i.e. the `searchup-skill/` folder). Use the absolute path of `<skill_dir>` to construct the full binary path.
+
+**Step 2: Build if needed.** If the binary does not exist, compile it first:
 
 ```bash
-cd /home/cat/Documents/trae_projects/trae/.trae/skills/searchup-skill && make -j$(nproc)
+cd <skill_dir> && make -j$(nproc)
 ```
 
-### Invocation Pattern
+**Step 3: Invoke.** Use `RunCommand` with the resolved absolute path:
 
 ```
-RunCommand: /home/cat/Documents/trae_projects/trae/.trae/skills/searchup-skill/build/searchup [OPTIONS] <pattern> [path...]
+<skill_dir>/build/searchup [OPTIONS] <pattern> [path...]
 ```
 
 ### Recommended AI Workflows
@@ -32,49 +36,49 @@ RunCommand: /home/cat/Documents/trae_projects/trae/.trae/skills/searchup-skill/b
 **1. Find where a symbol is defined (structured output):**
 
 ```bash
-/home/cat/Documents/trae_projects/trae/.trae/skills/searchup-skill/build/searchup --json -t "class MyClass" /path/to/project
+<skill_dir>/build/searchup --json -t "class MyClass" /path/to/project
 ```
 
 **2. Find all files containing a pattern:**
 
 ```bash
-/home/cat/Documents/trae_projects/trae/.trae/skills/searchup-skill/build/searchup -l -t "TODO" /path/to/project
+<skill_dir>/build/searchup -l -t "TODO" /path/to/project
 ```
 
 **3. Regex search with context:**
 
 ```bash
-/home/cat/Documents/trae_projects/trae/.trae/skills/searchup-skill/build/searchup -r -C 3 "function\\s+\\w+\\(" /path/to/project
+<skill_dir>/build/searchup -r -C 3 "function\\s+\\w+\\(" /path/to/project
 ```
 
 **4. Search specific file types only:**
 
 ```bash
-/home/cat/Documents/trae_projects/trae/.trae/skills/searchup-skill/build/searchup -t -e cpp -e h "include" /path/to/project
+<skill_dir>/build/searchup -t -e cpp -e h "include" /path/to/project
 ```
 
 **5. Find files by name:**
 
 ```bash
-/home/cat/Documents/trae_projects/trae/.trae/skills/searchup-skill/build/searchup -f "config" /path/to/project
+<skill_dir>/build/searchup -f "config" /path/to/project
 ```
 
 **6. Count matches per file:**
 
 ```bash
-/home/cat/Documents/trae_projects/trae/.trae/skills/searchup-skill/build/searchup -c -i -t "fixme" /path/to/project
+<skill_dir>/build/searchup -c -i -t "fixme" /path/to/project
 ```
 
 **7. Search web page content:**
 
 ```bash
-/home/cat/Documents/trae_projects/trae/.trae/skills/searchup-skill/build/searchup --web -i "searchup" https://github.com/oemoem12/searchup
+<skill_dir>/build/searchup --web -i "searchup" https://github.com/oemoem12/searchup
 ```
 
 **8. Search web page with JSON output:**
 
 ```bash
-/home/cat/Documents/trae_projects/trae/.trae/skills/searchup-skill/build/searchup --web --json "C++" https://example.com
+<skill_dir>/build/searchup --web --json "C++" https://example.com
 ```
 
 ### When to Use This Skill vs Built-in Tools
@@ -177,7 +181,7 @@ searchup-skill/
 ## Build (first time only)
 
 ```bash
-cd /home/cat/Documents/trae_projects/trae/.trae/skills/searchup-skill && make -j$(nproc)
+cd <skill_dir> && make -j$(nproc)
 ```
 
 ## Building Dependencies
