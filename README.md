@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="https://www.npmjs.com/package/searchup"><img src="https://img.shields.io/npm/v/searchup?style=flat-square" alt="npm version"/></a>
-  <a href="https://github.com/oemoem12/searchup/blob/master/LICENSE"><img src="https://img.shields.io/npm/l/searchup?style=flat-square" alt="MIT License"/></a>
+  <a href="https://www.npmjs.com/package/@catodm/searchup"><img src="https://img.shields.io/npm/v/@catodm/searchup?style=flat-square" alt="npm version"/></a>
+  <a href="https://github.com/oemoem12/searchup/blob/master/LICENSE"><img src="https://img.shields.io/npm/l/@catodm/searchup?style=flat-square" alt="MIT License"/></a>
   <a href="https://github.com/oemoem12/searchup/actions"><img src="https://img.shields.io/github/actions/workflow/status/oemoem12/searchup?style=flat-square" alt="CI"/></a>
 </p>
 
@@ -29,7 +29,7 @@
 
 ```bash
 # npm (recommended)
-npm install -g searchup
+npm install -g @catodm/searchup
 
 # Build from source
 git clone https://github.com/oemoem12/searchup.git
