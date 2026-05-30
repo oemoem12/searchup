@@ -7,53 +7,75 @@ description: "High-performance C++ search utility for files and text. Invoke whe
 
 A high-performance search utility written in **C++17**, designed specifically for AI agents to search files, directories, and text content with maximum speed and flexibility.
 
-## Directory Structure
+## AI Agent Quick Reference
+
+When this skill is activated, use `RunCommand` to invoke searchup. The binary is located at:
 
 ```
-searchup-skill/
-├── SKILL.md              # This file — skill definition
-├── scripts/
-│   ├── searchup.cpp      # C++17 core search engine (~515 lines)
-│   └── searchup.js       # Node.js CLI wrapper (npm bin entry)
-├── Makefile              # Build system (make / make install)
-├── CMakeLists.txt        # CMake build support
-├── package.json          # npm package config
-├── LICENSE               # MIT License
-└── README.md             # GitHub project readme
+.trae/skills/searchup-skill/build/searchup
 ```
 
-## Quick Start
-
-### Build from source
+If the binary does not exist, build it first:
 
 ```bash
-cd .trae/skills/searchup-skill
-make -j$(nproc)
+cd .trae/skills/searchup-skill && make -j$(nproc)
 ```
 
-Or with CMake:
+### Invocation Pattern
+
+```
+RunCommand: .trae/skills/searchup-skill/build/searchup [OPTIONS] <pattern> [path...]
+```
+
+### Recommended AI Workflows
+
+**1. Find where a symbol is defined (structured output):**
 
 ```bash
-mkdir -p build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
+.trae/skills/searchup-skill/build/searchup --json -t "class MyClass" /path/to/project
 ```
 
-The compiled binary will be at `build/searchup`.
-
-### Install via npm
+**2. Find all files containing a pattern:**
 
 ```bash
-npm install -g searchup
+.trae/skills/searchup-skill/build/searchup -l -t "TODO" /path/to/project
 ```
 
-## Usage
+**3. Regex search with context:**
 
-```
-searchup [OPTIONS] <pattern> [path...]
+```bash
+.trae/skills/searchup-skill/build/searchup -r -C 3 "function\\s+\\w+\\(" /path/to/project
 ```
 
-### Search Modes
+**4. Search specific file types only:**
+
+```bash
+.trae/skills/searchup-skill/build/searchup -t -e cpp -e h "include" /path/to/project
+```
+
+**5. Find files by name:**
+
+```bash
+.trae/skills/searchup-skill/build/searchup -f "config" /path/to/project
+```
+
+**6. Count matches per file:**
+
+```bash
+.trae/skills/searchup-skill/build/searchup -c -i -t "fixme" /path/to/project
+```
+
+### When to Use This Skill vs Built-in Tools
+
+| Scenario | Use searchup | Use built-in Grep/Glob |
+|----------|-------------|----------------------|
+| Need JSON output for parsing | ✅ | ❌ |
+| Large codebase (10k+ files) | ✅ | ❌ |
+| Complex multi-filter search | ✅ | ❌ |
+| Quick single-file lookup | ❌ | ✅ |
+| Simple filename glob | ❌ | ✅ |
+
+## Search Modes
 
 | Mode | Flag | Description |
 |------|------|-------------|
@@ -61,7 +83,7 @@ searchup [OPTIONS] <pattern> [path...]
 | Filename search | `-f` | Search file/directory names matching pattern |
 | Regex search | `-r` | Use regular expressions for pattern matching |
 
-### Output Modes
+## Output Modes
 
 | Flag | Description |
 |------|-------------|
@@ -70,7 +92,7 @@ searchup [OPTIONS] <pattern> [path...]
 | `-c` | Show match count per file |
 | `-n` | Show line numbers (default in text mode) |
 
-### Filters
+## Filters
 
 | Flag | Description |
 |------|-------------|
@@ -82,25 +104,13 @@ searchup [OPTIONS] <pattern> [path...]
 | `--hidden` | Include hidden files and directories |
 | `--binary` | Include binary files (skip by default) |
 
-### Context
+## Context
 
 | Flag | Description |
 |------|-------------|
 | `-A <N>` | Show N lines after each match |
 | `-B <N>` | Show N lines before each match |
 | `-C <N>` | Show N lines of context around each match |
-
-### Examples
-
-```bash
-searchup -i -t -e cpp "main" src/
-searchup -r -C 3 "class\s+\w+" .
-searchup -f "config" /etc
-searchup --json "TODO" src/
-searchup -c -t "FIXME" .
-searchup -l -t "include" src/
-searchup -t --depth 3 --max-size 1048576 "function" .
-```
 
 ## JSON Output Format
 
@@ -124,19 +134,29 @@ When using `--json`, the output is structured as:
 }
 ```
 
-## AI Integration
+## Directory Structure
 
-This skill is designed to be invoked by AI agents when:
+```
+searchup-skill/
+├── SKILL.md              # This file — skill definition
+├── scripts/
+│   ├── searchup.cpp      # C++17 core search engine (~515 lines)
+│   └── searchup.js       # Node.js CLI wrapper (npm bin entry)
+├── Makefile              # Build system (make / make install)
+├── CMakeLists.txt        # CMake build support
+├── package.json          # npm package config
+├── LICENSE               # MIT License
+└── README.md             # GitHub project readme
+```
 
-- Built-in grep/find performance is insufficient for large codebases
-- Structured (JSON) output is needed for programmatic processing
-- Complex search patterns with multiple filters are required
-- Fast, C++-native performance is desired over script-based search
-- The agent needs to scan a codebase with fine-grained control over search depth, file sizes, and output format
+## Build (first time only)
+
+```bash
+cd .trae/skills/searchup-skill && make -j$(nproc)
+```
 
 ## Building Dependencies
 
 - C++17 compatible compiler (GCC 8+, Clang 7+)
-- CMake 3.14+ (optional, for CMake build)
 - POSIX-compliant OS (Linux, macOS, WSL)
 - Standard library only — no external dependencies
